@@ -1,0 +1,14 @@
+name: test-environment
+channels:
+- defaults
+- conda-forge
+dependencies:
+  - python=${PYTHON}
+  - numpy
+  - pytest
+  - pytest-cov
+  - pint
+  - os
+  - subprocess
+  - serial
+
