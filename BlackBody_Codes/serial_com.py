@@ -75,6 +75,7 @@ class BlackBodyCommands(BlackBodySerialCommunication):
 
     def read_temperature(self):
         """Read the current temperature of the blackbody"""
+        type = b'R'
         self.write_message(b'$0101RO5C1\r')
         time.sleep(1)
         response = self.read_message()
@@ -91,12 +92,12 @@ class BlackBodyCommands(BlackBodySerialCommunication):
         else:
             raise ValueError('The type submitted was not a byte sting of R or W')
 
-    def calculate_checksum(self, input_string, type):
+    def calculate_checksum(self, input_string):
         """calculate the value of the checksum that must be added to the end of all commands sent to the device"""
         # letter values are the number representation of the values used to build the cheksum command.
         # See the blackbody manual (pg.8) for more information
         letter_values = {100 + (val * 10): letter for val, letter in enumerate(list(string.ascii_uppercase))}
-        calculate_string = b''.join([self.id_char, type, self.get_param_value(type), input_string])
+        calculate_string = b''.join([self.id_char, input_string])
         checksum_number = sum(calculate_string) % 256
         letter_number = checksum_number - (checksum_number%10)
         remainder = checksum_number - letter_number
@@ -104,13 +105,16 @@ class BlackBodyCommands(BlackBodySerialCommunication):
             return bytes(str(value), encoding='utf8')
         return b''.join([to_bytes(letter_values[letter_number]), to_bytes(remainder)])
 
-    def create_command_byte_array(self, type):
-        return b''.join([self.start_char, self.id, type, self.get_param_value((type)), value, ])
+    def create_command_byte_array(self, stripped_message):
+        return b''.join([self.start_char, self.id_char, stripped_message, self.end_char])
 
     def set_temperature(self, temperature):
-        """Change the setpoint of the blackbody"""
-        self.write_message(b'$0101W0955.000\r')
-        self.sleep(0.5)
+        """Change the setpoint of the blackbody. temperature must be a byte array 6 characters in length
+        including the . if one is included. the temperature units are deg C"""
+        type = b'W'
+        base_message = b''.join([type, self.get_param_value(type), temperature])
+        stripped_message = b''.join([base_message, self.calculate_checksum(base_message)])
+        self.write_message(self.create_command_byte_array(stripped_message))
         return self.read_message()
 
     def decompose_message(self, message):
@@ -119,11 +123,11 @@ class BlackBodyCommands(BlackBodySerialCommunication):
                 'error': message[8:9], 'checksum': message[-2:].strip(b'\r')}
 
 
+
 if __name__ == '__main__':
     a = BlackBodyCommands()
     print(a.ports)
     a.configure_port(2)
-    b = a.read_temperature()
-    print(b, type(b))
-    a.calculate_checksum(b'55.000', b'W')
+    message = a.set_temperature(b'100.00')
+    print(message)
 
