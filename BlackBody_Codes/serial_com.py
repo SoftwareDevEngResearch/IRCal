@@ -16,6 +16,8 @@ class BlackBodySerial():
                                              'serial.tools.list_ports']).decode('utf-8').\
                                               strip('\n').replace('\n', '').split()
 
+
+
     def configure_port(self, port_number=0, timeout=5):
         self.port_name = self.ports[port_number]
         self.configured_port = serial.Serial(self.ports[port_number],
@@ -62,6 +64,10 @@ class BlackBodySerial():
         self.close_port()
         return response
 
+    def decompose_message(self, message):
+        return {'id': message[1:5], 'type': message[5:6], 'param': message[6:8],
+                'error': message[8:9], 'checksum': message[-2:].strip(b'\r')}
+
     def decode_message(self, message):
         letter_values = {letter: 100 + (val * 10) for val,
                                                       letter in enumerate(list(string.ascii_uppercase))}
@@ -69,8 +75,11 @@ class BlackBodySerial():
 
 if __name__ == '__main__':
     a = BlackBodySerial()
-    a.configure_port(0)
+    print(a.ports)
+    a.configure_port(2)
     b = a.read_temperature()
-    print(b)
+    print(b, type(b))
     print(a.decode_message('a'))
+    message = a.decompose_message(b)
+    print(message)
 
