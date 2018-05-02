@@ -7,18 +7,26 @@ import serial
 from serial import Serial
 
 import string
+import time
 
 
-class BlackBodySerial():
+class BlackBodySerialCommunication:
 
     def __init__(self):
+        """Determine the currently connected serial ports that can be used
+        for serial communication"""
         self.ports = subprocess.check_output(['python', '-m',
                                              'serial.tools.list_ports']).decode('utf-8').\
                                               strip('\n').replace('\n', '').split()
-
-
+        self.start_char = b"$"
+        self.end_char = b"\r"
+        self.id_char = b"0101"
+        self.read_char = b'R'
+        self.write_char = b"W"
 
     def configure_port(self, port_number=0, timeout=5):
+        """Setup the port based on the specs for the blackbody device
+        as defined by the user manual. See the docs for the user manual"""
         self.port_name = self.ports[port_number]
         self.configured_port = serial.Serial(self.ports[port_number],
                                         bytesize=serial.EIGHTBITS,
@@ -28,6 +36,7 @@ class BlackBodySerial():
                                         timeout=timeout)
 
     def open_port(self):
+        """Check to see fo the port is open and open it if not open"""
         if self.port_status:
             print('{0} is Open'.format(self.port_name))
         else:
@@ -35,6 +44,7 @@ class BlackBodySerial():
             self.open_port()
 
     def close_port(self):
+        """Check to see if the port is closed and close it if open"""
         if not self.port_status:
             print('{0} is Closed'.format(self.port_name))
         else:
@@ -43,42 +53,77 @@ class BlackBodySerial():
 
     @property
     def port_status(self):
+        """Check the state of the port (open or closed)
+        Returns true for open and false for closed"""
         if self.configured_port.is_open is True:
             return True
         elif self.configured_port.is_open is False:
             return False
 
-
     def write_message(self, write_data):
+        """Write a message over the serial connection. Requires a byte string"""
         self.open_port()
         self.configured_port.write(write_data)
 
     def read_message(self):
+        """Read the serial output from the connection. Returns a byte string"""
         self.open_port()
         return self.configured_port.readline()
 
+
+class BlackBodyCommands(BlackBodySerialCommunication):
+
     def read_temperature(self):
-        self.write_message(b'$0101R05C1\r')
+        """Read the current temperature of the blackbody"""
+        self.write_message(b'$0101RO5C1\r')
+        time.sleep(1)
         response = self.read_message()
         self.close_port()
         return response
 
+    def get_param_value(self, type):
+        if type == b'R':
+            self.param = b'05'
+            return self.param
+        elif type == b'W':
+            self.param = b'09'
+            return self.param
+        else:
+            raise ValueError('The type submitted was not a byte sting of R or W')
+
+    def calculate_checksum(self, input_string, type):
+        """calculate the value of the checksum that must be added to the end of all commands sent to the device"""
+        # letter values are the number representation of the values used to build the cheksum command.
+        # See the blackbody manual (pg.8) for more information
+        letter_values = {100 + (val * 10): letter for val, letter in enumerate(list(string.ascii_uppercase))}
+        calculate_string = b''.join([self.id_char, type, self.get_param_value(type), input_string])
+        checksum_number = sum(calculate_string) % 256
+        letter_number = checksum_number - (checksum_number%10)
+        remainder = checksum_number - letter_number
+        def to_bytes(value):
+            return bytes(str(value), encoding='utf8')
+        return b''.join([to_bytes(letter_values[letter_number]), to_bytes(remainder)])
+
+    def create_command_byte_array(self, type):
+        return b''.join([self.start_char, self.id, type, self.get_param_value((type)), value, ])
+
+    def set_temperature(self, temperature):
+        """Change the setpoint of the blackbody"""
+        self.write_message(b'$0101W0955.000\r')
+        self.sleep(0.5)
+        return self.read_message()
+
     def decompose_message(self, message):
+        """Convert the message read form the device to a dictionary of its components"""
         return {'id': message[1:5], 'type': message[5:6], 'param': message[6:8],
                 'error': message[8:9], 'checksum': message[-2:].strip(b'\r')}
 
-    def decode_message(self, message):
-        letter_values = {letter: 100 + (val * 10) for val,
-                                                      letter in enumerate(list(string.ascii_uppercase))}
-        return letter_values
 
 if __name__ == '__main__':
-    a = BlackBodySerial()
+    a = BlackBodyCommands()
     print(a.ports)
     a.configure_port(2)
     b = a.read_temperature()
     print(b, type(b))
-    print(a.decode_message('a'))
-    message = a.decompose_message(b)
-    print(message)
+    a.calculate_checksum(b'55.000', b'W')
 
