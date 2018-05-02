@@ -7,5 +7,4 @@ dependencies:
   - pytest
   - pytest-cov
   - pint
-  -setuptools
 
