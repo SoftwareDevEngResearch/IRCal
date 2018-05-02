@@ -57,7 +57,6 @@ class BlackBodySerial():
         self.open_port()
         return self.configured_port.readline()
 
-
     def read_temperature(self):
         self.write_message(b'$0101R05C1\r')
         response = self.read_message()
