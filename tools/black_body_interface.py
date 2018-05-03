@@ -29,11 +29,11 @@ class BlackBodySerialCommunication:
         as defined by the user manual. See the docs for the user manual"""
         self.port_name = self.ports[port_number]
         self.configured_port = serial.Serial(self.ports[port_number],
-                                        bytesize=serial.EIGHTBITS,
-                                        parity=serial.PARITY_NONE,
-                                        stopbits=1,
-                                        baudrate=9600,
-                                        timeout=timeout)
+                                             bytesize=serial.EIGHTBITS,
+                                             parity=serial.PARITY_NONE,
+                                             stopbits=1,
+                                             baudrate=9600,
+                                             timeout=timeout)
 
     def open_port(self):
         """Check to see fo the port is open and open it if not open"""
