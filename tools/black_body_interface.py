@@ -2,10 +2,8 @@
 
 import subprocess
 from typing import Union
-
 import serial
 from serial import Serial
-
 import string
 import time
 
@@ -121,15 +119,5 @@ class BlackBodyCommands(BlackBodySerialCommunication):
     def decompose_message(self, message):
         """Convert the message read form the device to a dictionary of its components"""
         return {'start_char': message[0], 'id': message[1:5], 'type': message[5:6],
-                        'param': message[6:8], 'data': message[8:14], 'checksum': message[14:16],
-                        'endchar': message[16:]}
-
-
-
-if __name__ == '__main__':
-    a = BlackBodyCommands()
-    print(a.ports)
-    a.configure_port(2)
-    message = a.set_temperature(b'100.00')
-    print(message)
-
+                'param': message[6:8], 'data': message[8:14], 'checksum': message[14:16],
+                'endchar': message[16:]}
