@@ -73,15 +73,6 @@ class BlackBodySerialCommunication:
 
 class BlackBodyCommands(BlackBodySerialCommunication):
 
-    def read_temperature(self):
-        """Read the current temperature of the blackbody"""
-        type = b'R'
-        self.write_message(b'$0101RO5C1\r')
-        time.sleep(1)
-        response = self.read_message()
-        self.close_port()
-        return response
-
     def get_param_value(self, type):
         if type == b'R':
             self.param = b'05'
@@ -117,10 +108,21 @@ class BlackBodyCommands(BlackBodySerialCommunication):
         self.write_message(self.create_command_byte_array(stripped_message))
         return self.read_message()
 
+    def read_temperature(self):
+        """Read the current temperature of the blackbody"""
+        type = b'R'
+        self.write_message(b'$0101RO5C1\r')  # Predefined command as set by the manual
+        time.sleep(0.5)
+        response = self.read_message()
+        decoded_message = self.decompose_message(response)
+        self.close_port()
+        return decoded_message['data']
+
     def decompose_message(self, message):
         """Convert the message read form the device to a dictionary of its components"""
-        return {'id': message[1:5], 'type': message[5:6], 'param': message[6:8],
-                'error': message[8:9], 'checksum': message[-2:].strip(b'\r')}
+        return {'start_char': message[0], 'id': message[1:5], 'type': message[5:6],
+                        'param': message[6:8], 'data': message[8:14], 'checksum': message[14:16],
+                        'endchar': message[16:]}
 
 
 
