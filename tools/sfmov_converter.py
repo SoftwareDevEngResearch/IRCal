@@ -14,14 +14,16 @@ class SfmovTools:
     def __init__(self, opendir, savedir, fname):
         self.opendir = self.path_handling(opendir)
         self.savedir = self.path_handling(savedir)
-        self.file = fname.replace('.sfmov', '')  # includes the .sf--- suffix
-        self.extensions = {'sfmov': '.sfmov', 'inc': '.inc'}
-        self.framerate = None
-        self.int_time = None
-        self.data = None
+        self.file = os.path.splitext(os.path.basename(fname))[0]
+        self.extensions = {'sfmov': '.sfmov', 'inc': '.inc', 'hdf5': '.hdf5'}
+        self.frame_rate = float
+        self.int_time = float
+        self.data = float
         self.dimensions = {'height': int, 'width': int}
         self.number_of_frames = int
         self.dropped_frames = int
+        self.length_DATA = 75
+        self.camera_name = str()
 
     @staticmethod
     def path_handling(path):
@@ -31,20 +33,18 @@ class SfmovTools:
         return path
 
     def open_file(self, extension):
-        return open(os.path.join(self.opendir, self.file, self.extensions[extension]), 'r')
+        return open(os.path.join(self.opendir, self.file + self.extensions[extension]))
 
     def scrape_inc(self):  # Get framerate and integration time from .inc file:
-        with self.open_file('.inc') as f:
-            # [:-6] removes the '.sf---' allowing for '.inc' to be appended
-            inc = f.read().split()
-            framerate_index = inc.index('FRate_0') + 1
-            int_time_index = inc.index('ITime_0') + 1
-            self.framerate = float(inc[framerate_index])
-            self.int_time = float(inc[int_time_index])
-        return self.framerate, self.int_time
+        with self.open_file('inc') as f:
+            inc_data = {x[0]: x[1:] for x in [s.split(' ') for s in f.splitlines()]}
+            self.int_time = float(inc_data['ITime_0'][0])
+            self.frame_rate = float(inc_data['FRate_0'][0])
+            self.camera_name = inc_data['xmrCameraName']
+        return self.frame_rate, self.int_time
 
     def imread(self):  # Read in the video/image data:
-        with self.open_file('.sfmov') as f:
+        with self.open_file('sfmov') as f:
             # Skip the text header and find the beginning of the binary data:
             content = f.read()
 
@@ -60,7 +60,7 @@ class SfmovTools:
             frames_claimed = int(content.split()
                                  [content.split().index('NumDPs')+1])
 
-            f.seek(content.index('DATA')+75, os.SEEK_SET)
+            f.seek(content.index('DATA')+self.length_DATA, os.SEEK_SET)
             # 75 is length of 'DATA' plus carriage return
 
             del content  # clear the content variable from memory
@@ -78,9 +78,7 @@ class SfmovTools:
     def convert(self):
         self.imread()
         self.scrape_inc()
-        if not os.path.exists(self.savedir):
-            os.makedirs(self.savedir)
-        with h5py.File(self.savedir+'/'+self.file[:-6] + ".hdf5", 'w') as f:
+        with h5py.File(os.path.join(self.savedir, self.file + self.extensions['hdf5']), 'w+') as f:
             f.create_dataset('data', data=self.data)
             f.create_dataset('nframes', data=self.number_of_frames)
             f.create_dataset('width', data=self.dimensions['width'])

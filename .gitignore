@@ -156,5 +156,9 @@ venv.bak/
 
 .idea/
 
+.inc
+.sfmov
+
+
 
 # End of https://www.gitignore.io/api/c,python
