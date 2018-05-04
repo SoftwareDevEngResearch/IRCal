@@ -14,7 +14,14 @@ class SfmovTools:
     def __init__(self, opendir, savedir, fname):
         self.opendir = self.path_handling(opendir)
         self.savedir = self.path_handling(savedir)
-        self.file = fname  # includes the .sf--- suffix
+        self.file = fname.replace('.sfmov', '')  # includes the .sf--- suffix
+        self.extensions = {'sfmov': '.sfmov', 'inc': '.inc'}
+        self.framerate = None
+        self.int_time = None
+        self.data = None
+        self.dimensions = {'height': int, 'width': int}
+        self.number_of_frames = int
+        self.dropped_frames = int
 
     @staticmethod
     def path_handling(path):
@@ -23,8 +30,11 @@ class SfmovTools:
             path = '/' + path
         return path
 
+    def open_file(self, extension):
+        return open(os.path.join(self.opendir, self.file, self.extensions[extension]), 'r')
+
     def scrape_inc(self):  # Get framerate and integration time from .inc file:
-        with open(self.opendir+'/'+self.file[:-6] + ".inc", 'r') as f:
+        with self.open_file('.inc') as f:
             # [:-6] removes the '.sf---' allowing for '.inc' to be appended
             inc = f.read().split()
             framerate_index = inc.index('FRate_0') + 1
@@ -34,16 +44,16 @@ class SfmovTools:
         return self.framerate, self.int_time
 
     def imread(self):  # Read in the video/image data:
-        with open(self.opendir+'/'+self.file, 'r') as f:
+        with self.open_file('.sfmov') as f:
             # Skip the text header and find the beginning of the binary data:
             content = f.read()
 
             # scrape the metadata in the sf file:
-            self.width = int(content.split()
-                             [content.split().index('xPixls')+1])
+            self.dimensions['width'] = int(content.split()
+                                       [content.split().index('xPixls')+1])
 
-            self.height = int(content.split()
-                              [content.split().index('yPixls')+1])
+            self.dimensions['height'] = int(content.split()
+                                        [content.split().index('yPixls')+1])
 
             # Number of frames the sf file claims (could be different than
             # the actual number if the camera dropped frames):
@@ -58,12 +68,12 @@ class SfmovTools:
             # Load the binary data into a 1D array:
             self.data = np.fromfile(f, dtype=np.uint16)
             # Reshape into a 3D matrix of nframes(auto), height, width:
-            self.data = np.reshape(self.data, (-1, self.height, self.width))
+            self.data = np.reshape(self.data, (-1, self.dimensions['height'], self.dimensions['width']))
 
-            self.nframes = self.data.shape[0]  # Actual number of frames
-            self.dropped_frames = frames_claimed - self.nframes
+            self.number_of_frames = self.data.shape[0]  # Actual number of frames
+            self.dropped_frames = frames_claimed - self.number_of_frames
 
-        return self.data, self.width, self.height, self.nframes, self.dropped_frames
+        return self.data, self.dimensions, self.number_of_frames, self.dropped_frames
 
     def convert(self):
         self.imread()
@@ -72,9 +82,9 @@ class SfmovTools:
             os.makedirs(self.savedir)
         with h5py.File(self.savedir+'/'+self.file[:-6] + ".hdf5", 'w') as f:
             f.create_dataset('data', data=self.data)
-            f.create_dataset('nframes', data=self.nframes)
-            f.create_dataset('width', data=self.width)
-            f.create_dataset('height', data=self.height)
+            f.create_dataset('nframes', data=self.number_of_frames)
+            f.create_dataset('width', data=self.dimensions['width'])
+            f.create_dataset('height', data=self.dimensions['height'])
             f.create_dataset('drop', data=self.dropped_frames)
             f.create_dataset('framerate', data=self.framerate)
             f.create_dataset('int_time', data=self.int_time)
