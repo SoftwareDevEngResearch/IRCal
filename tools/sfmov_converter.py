@@ -5,32 +5,32 @@ Created on Mon Mar 12 17:46:19 2018
 modified by Derek Bean
 """
 
-import pandas as pd
 import numpy as np
 import h5py
 import os
-import glob
 
 
-
-class Convert_sf():
+class SfmovTools:
     def __init__(self, opendir, savedir, fname):
-        self.opendir = opendir.replace('\\', '/')
-        if self.opendir[0] == '/':
-            self.opendir = '/' + opendir
-        self.savedir = savedir.replace('\\', '/')
-        if self.savedir[0] == '/':
-            self.savedir = '/' + savedir
+        self.opendir = self.path_handling(opendir)
+        self.savedir = self.path_handling(savedir)
         self.file = fname  # includes the .sf--- suffix
+
+    @staticmethod
+    def path_handling(path):
+        path.replace('\\', '/')
+        if path[0] == '/':
+            path = '/' + path
+        return path
 
     def scrape_inc(self):  # Get framerate and integration time from .inc file:
         with open(self.opendir+'/'+self.file[:-6] + ".inc", 'r') as f:
             # [:-6] removes the '.sf---' allowing for '.inc' to be appended
             inc = f.read().split()
             framerate_index = inc.index('FRate_0') + 1
-            IntTime_index = inc.index('ITime_0') + 1
+            int_time_index = inc.index('ITime_0') + 1
             self.framerate = float(inc[framerate_index])
-            self.int_time = float(inc[IntTime_index])
+            self.int_time = float(inc[int_time_index])
         return self.framerate, self.int_time
 
     def imread(self):  # Read in the video/image data:
@@ -61,9 +61,9 @@ class Convert_sf():
             self.data = np.reshape(self.data, (-1, self.height, self.width))
 
             self.nframes = self.data.shape[0]  # Actual number of frames
-            self.drop = frames_claimed - self.nframes
+            self.dropped_frames = frames_claimed - self.nframes
 
-        return self.data, self.width, self.height, self.nframes, self.drop
+        return self.data, self.width, self.height, self.nframes, self.dropped_frames
 
     def convert(self):
         self.imread()
@@ -75,50 +75,7 @@ class Convert_sf():
             f.create_dataset('nframes', data=self.nframes)
             f.create_dataset('width', data=self.width)
             f.create_dataset('height', data=self.height)
-            f.create_dataset('drop', data=self.drop)
+            f.create_dataset('drop', data=self.dropped_frames)
             f.create_dataset('framerate', data=self.framerate)
             f.create_dataset('int_time', data=self.int_time)
         return self.data
-
-    def convert_batch(self, opendir, savedir):
-        os.chdir(opendir)
-        [self.Convert_sf(opendir, savedir, file).convert() for file in glob.glob('*.sfmof')]
-
-
-def add_conditions(condfile, datadir):
-    datadir = datadir.replace('\\', '/')
-    if datadir[0] == '/':
-        datadir = '/' + datadir
-    condfile = condfile.replace('\\', '/')
-    if condfile[0] == '/':
-        condfile = '/' + condfile
-
-    files = os.listdir(datadir)
-    conditions = pd.read_csv(condfile, sep='\t')
-    variables = list(conditions)  # list of test condition variables
-    for x in files:
-        try:
-            # row is hard coded with 'DP-', and 2 digits at before '.hdf5':
-            row = conditions.loc[conditions['DP-'] ==
-                                 float(x[:-5][-2:])].index[0]
-        except IndexError:
-            print 'Warning: no test conditions for', x
-        with h5py.File(datadir+'/'+x, 'r+') as f:
-            for y in variables:
-                try:
-                    f.create_dataset(y, data=conditions.loc[row][y])
-                except RuntimeError:
-                    print 'Skipped adding', y, 'to', x,\
-                        'because it already exists.'
-
-
-if __name__ == '__main__':
-    OpenDir = 'D:\Kernel IR Data\PythonProject\CameraData'
-    SaveDir = 'D:\Kernel IR Data\PythonProject\ConvertedData'
-    conditionsfile = 'D:\Kernel IR Data\PythonProject\TestConditions.txt'
-
-    print 'Converting sfmov files to hdf5...'
-    convert_batch(OpenDir, SaveDir)
-
-    print 'Adding test conditions to hdf5 files...'
-    add_conditions(conditionsfile, SaveDir)

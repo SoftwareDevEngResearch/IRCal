@@ -9,6 +9,14 @@ import time
 
 
 class BlackBodySerialCommunication:
+    """
+    Basic functions for configuring reading and writing related to the blackbody
+
+    This class holds the basic functions that can be used to communicate with the black body.
+    This includes configuring the port, opening and closing the port as well as reading and writing
+    to the device. This class is meant to be a parent class to other functions that need to
+    read/write/configure to do their task
+    """
 
     def __init__(self):
         """Determine the currently connected serial ports that can be used
@@ -25,6 +33,7 @@ class BlackBodySerialCommunication:
     def configure_port(self, port_number=0, timeout=5):
         """Setup the port based on the specs for the blackbody device
         as defined by the user manual. See the docs for the user manual"""
+        # TODO: May be possible to automatically determine and set the port number
         self.port_name = self.ports[port_number]
         self.configured_port = serial.Serial(self.ports[port_number],
                                              bytesize=serial.EIGHTBITS,
@@ -33,18 +42,20 @@ class BlackBodySerialCommunication:
                                              baudrate=9600,
                                              timeout=timeout)
 
-    def open_port(self):
+    def open_port(self, verbose=False):
         """Check to see fo the port is open and open it if not open"""
         if self.port_status:
-            print('{0} is Open'.format(self.port_name))
+            if verbose == True:
+                print('{0} is Open'.format(self.port_name))
         else:
             self.configured_port.open()
             self.open_port()
 
-    def close_port(self):
+    def close_port(self, verbose=False):
         """Check to see if the port is closed and close it if open"""
         if not self.port_status:
-            print('{0} is Closed'.format(self.port_name))
+            if verbose == True:
+                print('{0} is Closed'.format(self.port_name))
         else:
             self.configured_port.close()
             self.close_port()
@@ -53,10 +64,14 @@ class BlackBodySerialCommunication:
     def port_status(self):
         """Check the state of the port (open or closed)
         Returns true for open and false for closed"""
-        if self.configured_port.is_open is True:
-            return True
-        elif self.configured_port.is_open is False:
-            return False
+        try:
+            if self.configured_port.is_open is True:
+                return True
+            elif self.configured_port.is_open is False:
+                return False
+        except:
+            self.configure_port()
+            self.port_status
 
     def write_message(self, write_data):
         """Write a message over the serial connection. Requires a byte string"""
@@ -109,15 +124,17 @@ class BlackBodyCommands(BlackBodySerialCommunication):
     def read_temperature(self):
         """Read the current temperature of the blackbody"""
         type = b'R'
-        self.write_message(b'$0101RO5C1\r')  # Predefined command as set by the manual
-        time.sleep(0.5)
+        self.write_message(b'$0101R05C1\r')  # Predefined command as set by the manual
+        time.sleep(0.1)
         response = self.read_message()
         decoded_message = self.decompose_message(response)
         self.close_port()
-        return decoded_message['data']
+        print(response)
+        print(self.check)
+        return str(decoded_message['data'])
 
     def decompose_message(self, message):
         """Convert the message read form the device to a dictionary of its components"""
         return {'start_char': message[0], 'id': message[1:5], 'type': message[5:6],
-                'param': message[6:8], 'data': message[8:14], 'checksum': message[14:16],
-                'endchar': message[16:]}
+                'param': message[6:8], 'data': message[8:14], 'checksum': message[14:-1],
+                'endchar': message[-1:]}
