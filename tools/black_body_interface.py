@@ -1,9 +1,7 @@
 # 4/24/2018
 
 import subprocess
-from typing import Union
 import serial
-from serial import Serial
 import string
 import time
 
@@ -75,8 +73,11 @@ class BlackBodySerialCommunication:
 
     def write_message(self, write_data):
         """Write a message over the serial connection. Requires a byte string"""
-        self.open_port()
-        self.configured_port.write(write_data)
+        if type(write_data) == bytes:
+            self.open_port()
+            self.configured_port.write(write_data)
+        else:
+            raise TypeError('The write_message function requires an input of type bytes')
 
     def read_message(self):
         """Read the serial output from the connection. Returns a byte string"""

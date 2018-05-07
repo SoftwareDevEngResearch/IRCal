@@ -33,9 +33,12 @@ class SfmovTools:
         return path
 
     def open_file(self, extension):
+        """ Open and return a file object based on the input path"""
         return open(os.path.join(self.opendir, self.file + self.extensions[extension]))
 
-    def scrape_inc(self):  # Get framerate and integration time from .inc file:
+    def scrape_inc(self):
+        """Scrape the integration time and frame rate from the .inc file and store
+        them as object variables"""
         with self.open_file('inc') as f:
             inc_data = {x[0]: x[1:] for x in [s.split(' ') for s in f.splitlines()]}
             self.int_time = float(inc_data['ITime_0'][0])
@@ -43,7 +46,8 @@ class SfmovTools:
             self.camera_name = inc_data['xmrCameraName']
         return self.frame_rate, self.int_time
 
-    def imread(self):  # Read in the video/image data:
+    def imread(self):
+        """ Read the images from the object filepath"""
         with self.open_file('sfmov') as f:
             # Skip the text header and find the beginning of the binary data:
             content = f.read()
