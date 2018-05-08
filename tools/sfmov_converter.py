@@ -15,7 +15,6 @@ class SfmovTools:
         self.opendir = self.path_handling(opendir)
         self.savedir = self.path_handling(savedir)
         self.file = os.path.splitext(os.path.basename(fname))[0]
-        self.extensions = {'sfmov': '.sfmov', 'inc': '.inc', 'hdf5': '.hdf5'}
         self.frame_rate = float
         self.int_time = float
         self.data = float
@@ -27,14 +26,20 @@ class SfmovTools:
 
     @staticmethod
     def path_handling(path):
+        """ Need to remove and replace function with os package"""
         path.replace('\\', '/')
         if path[0] == '/':
             path = '/' + path
         return path
 
+    @staticmethod
+    def extensions():
+        """Returns the file extension that are used in the class"""
+        return {'sfmov': '.sfmov', 'inc': '.inc', 'hdf5': '.hdf5'}
+
     def open_file(self, extension):
         """ Open and return a file object based on the input path"""
-        return open(os.path.join(self.opendir, self.file + self.extensions[extension]))
+        return open(os.path.join(self.opendir, self.file + self.extensions()[extension]))
 
     def scrape_inc(self):
         """Scrape the integration time and frame rate from the .inc file and store
@@ -82,12 +87,12 @@ class SfmovTools:
     def convert(self):
         self.imread()
         self.scrape_inc()
-        with h5py.File(os.path.join(self.savedir, self.file + self.extensions['hdf5']), 'w+') as f:
+        with h5py.File(os.path.join(self.savedir, self.file + self.extensions()['hdf5']), 'w+') as f:
             f.create_dataset('data', data=self.data)
             f.create_dataset('nframes', data=self.number_of_frames)
             f.create_dataset('width', data=self.dimensions['width'])
             f.create_dataset('height', data=self.dimensions['height'])
             f.create_dataset('drop', data=self.dropped_frames)
-            f.create_dataset('framerate', data=self.framerate)
+            f.create_dataset('framerate', data=self.frame_rate)
             f.create_dataset('int_time', data=self.int_time)
         return self.data
