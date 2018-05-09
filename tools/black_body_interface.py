@@ -16,7 +16,7 @@ class BlackBodySerialCommunication:
     read/write/configure to do their task
     """
 
-    def __init__(self):
+    def __init__(self, verbose=False):
         """Determine the currently connected serial ports that can be used
         for serial communication"""
         self.ports = subprocess.check_output(['python', '-m',
@@ -27,6 +27,7 @@ class BlackBodySerialCommunication:
         self.id_char = b"0101"
         self.read_char = b'R'
         self.write_char = b"W"
+        self.verbose = verbose
 
     def configure_port(self, port_number=0, timeout=5):
         """Setup the port based on the specs for the blackbody device
@@ -40,19 +41,19 @@ class BlackBodySerialCommunication:
                                              baudrate=9600,
                                              timeout=timeout)
 
-    def open_port(self, verbose=False):
+    def open_port(self):
         """Check to see fo the port is open and open it if not open"""
         if self.port_status:
-            if verbose == True:
+            if self.verbose:
                 print('{0} is Open'.format(self.port_name))
         else:
             self.configured_port.open()
             self.open_port()
 
-    def close_port(self, verbose=False):
+    def close_port(self):
         """Check to see if the port is closed and close it if open"""
         if not self.port_status:
-            if verbose == True:
+            if self.verbose:
                 print('{0} is Closed'.format(self.port_name))
         else:
             self.configured_port.close()
@@ -63,9 +64,9 @@ class BlackBodySerialCommunication:
         """Check the state of the port (open or closed)
         Returns true for open and false for closed"""
         try:
-            if self.configured_port.is_open is True:
+            if self.configured_port.is_open():
                 return True
-            elif self.configured_port.is_open is False:
+            elif not self.configured_port.is_open():
                 return False
         except:
             self.configure_port()
@@ -104,7 +105,7 @@ class BlackBodyCommands(BlackBodySerialCommunication):
         letter_values = {100 + (val * 10): letter for val, letter in enumerate(list(string.ascii_uppercase))}
         calculate_string = b''.join([self.id_char, input_string])
         checksum_number = sum(calculate_string) % 256
-        letter_number = checksum_number - (checksum_number%10)
+        letter_number = checksum_number - (checksum_number % 10)
         remainder = checksum_number - letter_number
         def to_bytes(value):
             return bytes(str(value), encoding='utf8')
