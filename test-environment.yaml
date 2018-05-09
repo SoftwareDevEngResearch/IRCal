@@ -1,0 +1,11 @@
+name: test-environment
+channels:
+- defaults
+- conda-forge
+dependencies:
+  - numpy
+  - pytest
+  - pytest-cov
+  - pint
+  - h5py
+  - pyserial
