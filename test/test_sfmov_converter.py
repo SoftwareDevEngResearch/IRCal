@@ -4,7 +4,7 @@ import numpy as np
 
 def test_scrape_inc():
     os.chdir('test/test_files/')
-    filepath = sc.SfmovTools.path_handling(os.path.abspath('.'))
+    filepath = os.path.abspath('.')
     test_object = sc.SfmovTools(filepath, filepath, 'ir_test_file')
     test_frame_rate, test_inc_time, test_camera_name = test_object.scrape_inc()
     assert np.isclose(test_frame_rate, 125.00) is True
