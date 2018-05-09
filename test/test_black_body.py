@@ -1,9 +1,5 @@
 import pytest
 from ..tools import black_body_interface as bbi
-import subprocess
-import serial
-import string
-import time
 
 
 def test_checksum():
