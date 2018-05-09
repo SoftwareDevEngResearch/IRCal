@@ -1,6 +1,7 @@
 from ..tools import  sfmov_converter as sc
 import os
 import numpy as np
+import h5py
 
 def test_scrape_inc():
     os.chdir('test/test_files/')
