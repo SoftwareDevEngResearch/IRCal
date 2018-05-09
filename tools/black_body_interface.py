@@ -15,6 +15,7 @@ class BlackBodySerialCommunication:
     to the device. This class is meant to be a parent class to other functions that need to
     read/write/configure to do their task
     """
+    # TODO: Add a function that checks for error in the message ans notifies the user
 
     def __init__(self, verbose=False):
         """Determine the currently connected serial ports that can be used

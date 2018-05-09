@@ -39,17 +39,19 @@ class SfmovTools:
 
     def open_file(self, extension):
         """ Open and return a file object based on the input path"""
-        return open(os.path.join(self.opendir, self.file + self.extensions()[extension]))
+        return open(os.path.join(self.opendir, self.file + self.extensions()[extension]), 'r')
 
     def scrape_inc(self):
         """Scrape the integration time and frame rate from the .inc file and store
         them as object variables"""
-        with self.open_file('inc') as f:
-            inc_data = {x[0]: x[1:] for x in [s.split(' ') for s in f.splitlines()]}
+        with self.open_file('inc') as file:
+            file_lines = file.readlines()
+            inc_data = {x[0]: x[1:] for x in [s.split(' ') for s in file_lines]}
+            print(inc_data.keys())
             self.int_time = float(inc_data['ITime_0'][0])
             self.frame_rate = float(inc_data['FRate_0'][0])
-            self.camera_name = inc_data['xmrCameraName']
-        return self.frame_rate, self.int_time
+            self.camera_name = inc_data['xmrCameraName'][0].strip('\n')
+        return self.frame_rate, self.int_time, self.camera_name
 
     def imread(self):
         """ Read the images from the object filepath"""
