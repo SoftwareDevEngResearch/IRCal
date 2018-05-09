@@ -7,6 +7,5 @@ dependencies:
   - pytest
   - pytest-cov
   - pint
-  - serial
   - h5py
 
