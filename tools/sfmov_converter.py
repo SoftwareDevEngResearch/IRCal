@@ -39,7 +39,8 @@ class SfmovTools:
 
     def open_file(self, extension):
         """ Open and return a file object based on the input path"""
-        return open(os.path.join(self.opendir, self.file + self.extensions()[extension]), 'r')
+        return open(os.path.join(self.opendir, self.file + self.extensions()[extension]),
+                    'r', encoding='latin-1')
 
     def scrape_inc(self):
         """Scrape the integration time and frame rate from the .inc file and store
@@ -57,21 +58,18 @@ class SfmovTools:
         """ Read the images from the object filepath"""
         with self.open_file('sfmov') as f:
             # Skip the text header and find the beginning of the binary data:
-            content = f.read()
-
+            rows = (row.split() for row in f.read().split('\n'))
+            content = {row.pop(0): row for row in rows}
             # scrape the metadata in the sf file:
-            self.dimensions['width'] = int(content.split()
-                                       [content.split().index('xPixls')+1])
+            self.dimensions['width'] = content.pop('xPixls')
 
-            self.dimensions['height'] = int(content.split()
-                                        [content.split().index('yPixls')+1])
+            self.dimensions['height'] = content.pop('yPixls')
 
             # Number of frames the sf file claims (could be different than
             # the actual number if the camera dropped frames):
-            frames_claimed = int(content.split()
-                                 [content.split().index('NumDPs')+1])
+            frames_claimed = int(content.pop('NumDPs')[0])
 
-            f.seek(content.index('DATA')+self.length_DATA, os.SEEK_SET)
+            f.seek(content['DATA']+self.length_DATA, os.SEEK_SET)
             # 75 is length of 'DATA' plus carriage return
 
             del content  # clear the content variable from memory
