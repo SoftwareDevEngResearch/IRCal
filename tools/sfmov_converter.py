@@ -67,7 +67,7 @@ class SfmovTools:
                 if 'DATA' in row:
                     idx = idx
                     break
-            f.seek(idx+76, os.SEEK_SET)
+            f.seek(idx + b'DATA\r', os.SEEK_SET)
             # scrape the metadata in the sf file:
             self.dimensions['width'] = int(content.pop(b'xPixls')[0])
 
