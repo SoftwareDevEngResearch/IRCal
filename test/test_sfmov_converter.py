@@ -12,4 +12,11 @@ def test_scrape_inc():
     assert np.isclose(test_inc_time, 1.5)
     assert test_camera_name == 'SC6700'
 
-
+def test_imread():
+    os.chdir('C:/Users/derek/PycharmProjects/IRCal/test/test_files/')
+    filepath = os.path.abspath('.')
+    test_object = sc.SfmovTools(filepath, filepath, 'ir_test_file')
+    data, dimensions, number_of_frames, dropped_frames = test_object.imread()
+    assert (dimensions == {'height': 512, 'width': 368})
+    assert (number_of_frames == 10)
+    assert (dropped_frames == 0)

@@ -8,6 +8,7 @@ modified by Derek Bean
 import numpy as np
 import h5py
 import os
+import matplotlib.pyplot as plt
 
 
 class SfmovTools:
@@ -21,7 +22,7 @@ class SfmovTools:
         self.dimensions = {'height': int, 'width': int}
         self.number_of_frames = int
         self.dropped_frames = int
-        self.length_DATA = 75
+        self.length_DATA = 75  # Length of the data in each row with the return character
         self.camera_name = str()
 
     @staticmethod
@@ -40,7 +41,7 @@ class SfmovTools:
     def open_file(self, extension):
         """ Open and return a file object based on the input path"""
         return open(os.path.join(self.opendir, self.file + self.extensions()[extension]),
-                    'r', encoding='latin-1')
+                    'r+b')
 
     def scrape_inc(self):
         """Scrape the integration time and frame rate from the .inc file and store
@@ -58,30 +59,31 @@ class SfmovTools:
         """ Read the images from the object filepath"""
         with self.open_file('sfmov') as f:
             # Skip the text header and find the beginning of the binary data:
-            rows = (row.split() for row in f.read().split('\n'))
-            content = {row.pop(0): row for row in rows}
-            # scrape the metadata in the sf file:
-            self.dimensions['width'] = content.pop('xPixls')
 
-            self.dimensions['height'] = content.pop('yPixls')
+            rows = (row.split() for row in f.read().split(b'\n'))
+            content = {}
+            for idx, row in enumerate(rows):
+                content[row[0]] = row[1:]
+                if 'DATA' in row:
+                    idx = idx
+                    break
+            f.seek(idx+76, os.SEEK_SET)
+            # scrape the metadata in the sf file:
+            self.dimensions['width'] = int(content.pop(b'xPixls')[0])
+
+            self.dimensions['height'] = int(content.pop(b'yPixls')[0])
 
             # Number of frames the sf file claims (could be different than
             # the actual number if the camera dropped frames):
-            frames_claimed = int(content.pop('NumDPs')[0])
-
-            f.seek(content['DATA']+self.length_DATA, os.SEEK_SET)
-            # 75 is length of 'DATA' plus carriage return
-
-            del content  # clear the content variable from memory
-
+            frames_claimed = int(content.pop(b'NumDPs')[0])
             # Load the binary data into a 1D array:
             self.data = np.fromfile(f, dtype=np.uint16)
-            # Reshape into a 3D matrix of nframes(auto), height, width:
+            print(self.data[0:15])
             self.data = np.reshape(self.data, (-1, self.dimensions['height'], self.dimensions['width']))
+            # Reshape into a 3D matrix of nframes(auto), height, width:
 
             self.number_of_frames = self.data.shape[0]  # Actual number of frames
             self.dropped_frames = frames_claimed - self.number_of_frames
-
         return self.data, self.dimensions, self.number_of_frames, self.dropped_frames
 
     def convert(self):
