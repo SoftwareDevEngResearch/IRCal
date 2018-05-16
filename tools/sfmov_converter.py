@@ -8,7 +8,7 @@ modified by Derek Bean
 import numpy as np
 import h5py
 import os
-import matplotlib.pyplot as plt
+import sys
 
 
 class SfmovTools:
@@ -48,11 +48,11 @@ class SfmovTools:
         them as object variables"""
         with self.open_file('inc') as file:
             file_lines = file.readlines()
-            inc_data = {x[0]: x[1:] for x in [s.split(' ') for s in file_lines]}
+            inc_data = {x[0]: x[1:] for x in [s.split(b' ') for s in file_lines]}
             print(inc_data.keys())
-            self.int_time = float(inc_data['ITime_0'][0])
-            self.frame_rate = float(inc_data['FRate_0'][0])
-            self.camera_name = inc_data['xmrCameraName'][0].strip('\n')
+            self.int_time = float(inc_data[b'ITime_0'][0])
+            self.frame_rate = float(inc_data[b'FRate_0'][0])
+            self.camera_name = inc_data[b'xmrCameraName'][0].strip(b'\n')
         return self.frame_rate, self.int_time, self.camera_name
 
     def imread(self):
@@ -67,7 +67,9 @@ class SfmovTools:
                 if 'DATA' in row:
                     idx = idx
                     break
-            f.seek(idx + b'DATA\r', os.SEEK_SET)
+            a = next(rows)
+            print(a, sys.getsizeof(a))
+            f.seek(idx + sys.getsizeof(b'DATA\n'), os.SEEK_SET)
             # scrape the metadata in the sf file:
             self.dimensions['width'] = int(content.pop(b'xPixls')[0])
 
@@ -78,7 +80,7 @@ class SfmovTools:
             frames_claimed = int(content.pop(b'NumDPs')[0])
             # Load the binary data into a 1D array:
             self.data = np.fromfile(f, dtype=np.uint16)
-            print(self.data[0:15])
+            print(np.shape(self.data))
             self.data = np.reshape(self.data, (-1, self.dimensions['height'], self.dimensions['width']))
             # Reshape into a 3D matrix of nframes(auto), height, width:
 
