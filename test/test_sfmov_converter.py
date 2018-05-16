@@ -1,6 +1,7 @@
 from ..tools import  sfmov_converter as sc
 import os
 import numpy as np
+import pytest
 
 os.chdir('test/test_files/')
 
@@ -19,3 +20,15 @@ def test_imread():
     assert (dimensions == {'height': 512, 'width': 368})
     assert (number_of_frames == 10)
     assert (dropped_frames == 0)
+
+
+def test_convert():
+    filepath = os.path.abspath('.')
+    filename = ('ir_test_file')
+    os.remove(os.path.join(filepath, filename+'.hdf5'))
+    test_object = sc.SfmovTools(filepath, filepath, filename)
+    test_object.convert()
+    assert os.path.isfile(os.path.join(filepath, 'ir_test_file.hdf5'))
+    with pytest.raises(OSError, match='The file already exists please choose a different one or delete the file'):
+        test_object.convert()
+    os.remove(os.path.join(filepath, filename + '.hdf5'))

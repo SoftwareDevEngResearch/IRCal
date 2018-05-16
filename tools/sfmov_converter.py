@@ -7,8 +7,7 @@ modified by Derek Bean
 
 import numpy as np
 import h5py
-import os
-import sys
+import os""
 
 
 class SfmovTools:
@@ -86,12 +85,15 @@ class SfmovTools:
     def convert(self):
         self.imread()
         self.scrape_inc()
-        with h5py.File(os.path.join(self.savedir, self.file + self.extensions()['hdf5']), 'w+') as f:
-            f.create_dataset('data', data=self.data)
-            f.create_dataset('nframes', data=self.number_of_frames)
-            f.create_dataset('width', data=self.dimensions['width'])
-            f.create_dataset('height', data=self.dimensions['height'])
-            f.create_dataset('drop', data=self.dropped_frames)
-            f.create_dataset('framerate', data=self.frame_rate)
-            f.create_dataset('int_time', data=self.int_time)
+        try:
+            with h5py.File(os.path.join(self.savedir, self.file + self.extensions()['hdf5']), 'w-') as file:
+                file.create_dataset('data', data=self.data)
+                file.create_dataset('number_of_frames', data=self.number_of_frames)
+                file.create_dataset('width', data=self.dimensions['width'])
+                file.create_dataset('height', data=self.dimensions['height'])
+                file.create_dataset('dropped_frames', data=self.dropped_frames)
+                file.create_dataset('frame_rate', data=self.frame_rate)
+                file.create_dataset('int_time', data=self.int_time)
+        except OSError:
+            raise OSError('The file already exists please choose a different one or delete the file')
         return self.data
