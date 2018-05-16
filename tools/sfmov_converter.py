@@ -57,19 +57,17 @@ class SfmovTools:
 
     def imread(self):
         """ Read the images from the object filepath"""
-        with self.open_file('sfmov') as f:
+        with self.open_file('sfmov') as file:
             # Skip the text header and find the beginning of the binary data:
 
-            rows = (row.split() for row in f.read().split(b'\n'))
+            # rows = (row.split() for row in f.read().split(b'\n'))
             content = {}
-            for idx, row in enumerate(rows):
-                content[row[0]] = row[1:]
-                if 'DATA' in row:
-                    idx = idx
+            for row in file:
+                row_contents = row.strip(b'\n').strip(b'\r').split(b' ')
+                content[row_contents[0]] = row_contents[1:]
+                if b'DATA' in row:
                     break
-            a = next(rows)
-            print(a, sys.getsizeof(a))
-            f.seek(idx + sys.getsizeof(b'DATA\n'), os.SEEK_SET)
+            self.data = np.fromfile(file, dtype=np.uint16)
             # scrape the metadata in the sf file:
             self.dimensions['width'] = int(content.pop(b'xPixls')[0])
 
@@ -79,11 +77,8 @@ class SfmovTools:
             # the actual number if the camera dropped frames):
             frames_claimed = int(content.pop(b'NumDPs')[0])
             # Load the binary data into a 1D array:
-            self.data = np.fromfile(f, dtype=np.uint16)
-            print(np.shape(self.data))
             self.data = np.reshape(self.data, (-1, self.dimensions['height'], self.dimensions['width']))
             # Reshape into a 3D matrix of nframes(auto), height, width:
-
             self.number_of_frames = self.data.shape[0]  # Actual number of frames
             self.dropped_frames = frames_claimed - self.number_of_frames
         return self.data, self.dimensions, self.number_of_frames, self.dropped_frames
