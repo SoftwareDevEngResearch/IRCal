@@ -25,7 +25,10 @@ def test_imread():
 def test_convert():
     filepath = os.path.abspath('.')
     filename = ('ir_test_file')
-    os.remove(os.path.join(filepath, filename+'.hdf5'))
+    try:
+        os.remove(os.path.join(filepath, filename+'.hdf5'))
+    except FileNotFoundError:
+        pass
     test_object = sc.SfmovTools(filepath, filepath, filename)
     test_object.convert()
     assert os.path.isfile(os.path.join(filepath, 'ir_test_file.hdf5'))

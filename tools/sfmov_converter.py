@@ -48,7 +48,6 @@ class SfmovTools:
         with self.open_file('inc') as file:
             file_lines = file.readlines()
             inc_data = {x[0]: x[1:] for x in [s.split(b' ') for s in file_lines]}
-            print(inc_data.keys())
             self.int_time = float(inc_data[b'ITime_0'][0])
             self.frame_rate = float(inc_data[b'FRate_0'][0])
             self.camera_name = inc_data[b'xmrCameraName'][0].strip(b'\n')
@@ -57,37 +56,51 @@ class SfmovTools:
     def imread(self):
         """ Read the images from the object filepath"""
         with self.open_file('sfmov') as file:
-            # Skip the text header and find the beginning of the binary data:
-
-            # rows = (row.split() for row in f.read().split(b'\n'))
+            # content will contain the data in the file header
             content = {}
+            # Iterate through the file line by line and store the data in the content dictionary
+            # until the Data section of the file starts
             for row in file:
                 row_contents = row.strip(b'\n').strip(b'\r').split(b' ')
                 content[row_contents[0]] = row_contents[1:]
                 if b'DATA' in row:
                     break
-            self.data = np.fromfile(file, dtype=np.uint16)
-            # scrape the metadata in the sf file:
+            # record the dimensions of the frame
             self.dimensions['width'] = int(content.pop(b'xPixls')[0])
-
             self.dimensions['height'] = int(content.pop(b'yPixls')[0])
-
-            # Number of frames the sf file claims (could be different than
-            # the actual number if the camera dropped frames):
+            # frames_claimed is the number of frames the camera thinks is in the data provided no frames are dropped
             frames_claimed = int(content.pop(b'NumDPs')[0])
-            # Load the binary data into a 1D array:
-            self.data = np.reshape(self.data, (-1, self.dimensions['height'], self.dimensions['width']))
-            # Reshape into a 3D matrix of nframes(auto), height, width:
+            # Starting after the data header read the data into a numpy array and then reshape it based on the
+            # frame dimensions from the file header
+            try:
+                self.data = np.fromfile(file, dtype=np.uint16)
+                self.data = np.reshape(self.data, (-1, self.dimensions['height'], self.dimensions['width']))
+            except:
+                # If the file is to big to fit in memory read the data in frame by frame using a np.memmap
+                # format. This uses disk space to store the data and takes quite a bit longer than the previous method
+                self.data = np.memmap('temp_sfmov_data',
+                                      dtype=np.uint16, mode='w+',
+                                      shape = (frames_claimed, self.dimensions['height'], self.dimensions['width']))
+                frame_pixels = self.dimensions['height']*self.dimensions['width']
+                for i in range(frames_claimed):
+                    temp_array = np.fromfile(file, dtype=np.uint16, count=frame_pixels)
+                    temp_array = np.reshape(temp_array, (self.dimensions['height'], self.dimensions['width']))
+                    self.data[i, :, :] = temp_array
+                # remove the temporary frame data
+                os.remove('temp_sfmov_data')
+
             self.number_of_frames = self.data.shape[0]  # Actual number of frames
             self.dropped_frames = frames_claimed - self.number_of_frames
         return self.data, self.dimensions, self.number_of_frames, self.dropped_frames
 
-    def convert(self):
+    def convert(self, compression_factor=5):
+        """Create a hdf5 binary database file of the converted data. Accepts a compression factor from 0 to 9
+        to define the amount of compression of the output file"""
         self.imread()
         self.scrape_inc()
         try:
-            with h5py.File(os.path.join(self.savedir, self.file + self.extensions()['hdf5']), 'w-') as file:
-                file.create_dataset('data', data=self.data)
+            with h5py.File(os.path.join(self.savedir, self.file + self.extensions()['hdf5']), 'w-',) as file:
+                file.create_dataset('data', data=self.data, compression='gzip', compression_opts=compression_factor)
                 file.create_dataset('number_of_frames', data=self.number_of_frames)
                 file.create_dataset('width', data=self.dimensions['width'])
                 file.create_dataset('height', data=self.dimensions['height'])

@@ -10,7 +10,7 @@ import os
 
 if __name__ == '__main__':
     sfmov_path = os.path.join(os.path.abspath('.'), 'test/test_files/')
-    file_name = "ir_test_file"
+    file_name = "B-lab test-000002"
     se = sc.SfmovTools(sfmov_path, sfmov_path, file_name)
     print(se.camera_name)
-    se.imread()
+    se.convert()
