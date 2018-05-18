@@ -11,7 +11,25 @@ import os
 
 
 class SfmovTools:
+    """
+    This class is a collection of tools that can be used to convert sfmov binary files from FLIR IR cameras
+    into hdf5 datasets with defined compression.
+
+    TODO: add functionality to get the data from the pod files and the extra data from the inc files
+    TODO: Finish writing tests especially ones that check to make sure the data is converted correctly
+    """
     def __init__(self, opendir, savedir, fname):
+        """
+        Initialize all of the parameters that are needed for the file conversion
+
+        Inputs:
+            opendir: Location of the files to be opened
+            savedir: Location to save the converted files in
+            fname:   Name of the file to be converted that has been stripped of file extensions
+
+        Outputs:
+            NONE
+        """
         self.opendir = self.path_handling(opendir)
         self.savedir = self.path_handling(savedir)
         self.file = os.path.splitext(os.path.basename(fname))[0]
@@ -26,7 +44,7 @@ class SfmovTools:
 
     @staticmethod
     def path_handling(path):
-        """ Need to remove and replace function with os package"""
+        """ TODO: Need to remove and replace function with os package for path handling across operating systems"""
         path.replace('\\', '/')
         if path[0] == '/':
             path = '/' + path
@@ -43,18 +61,43 @@ class SfmovTools:
                     'r+b')
 
     def scrape_inc(self):
-        """Scrape the integration time and frame rate from the .inc file and store
-        them as object variables"""
+        """
+        Scrape the integration time and frame rate from the .inc file and store
+        them as object variables
+
+        Inputs:
+            none outside of class instance methods
+
+        Outputs:
+            frame_rate:  (float) camera's set frame rate
+            int_time:    (float) camera's set integration time
+            camera_name: (string) camera's name
+        """
         with self.open_file('inc') as file:
             file_lines = file.readlines()
             inc_data = {x[0]: x[1:] for x in [s.split(b' ') for s in file_lines]}
             self.int_time = float(inc_data[b'ITime_0'][0])
             self.frame_rate = float(inc_data[b'FRate_0'][0])
-            self.camera_name = inc_data[b'xmrCameraName'][0].strip(b'\n')
+            self.camera_name = inc_data[b'xmrCameraName'][0].strip(b'\n').strip(b'\r')
         return self.frame_rate, self.int_time, self.camera_name
 
-    def imread(self):
-        """ Read the images from the object filepath"""
+    def scrape_sfmov(self):
+        """
+        Read the image data from the sfmov binary file
+
+        Take the data from the sfmov files where it is stored as encoded binary and gather
+        the data and frame information. First the frame dimensions and number of frames are taken
+        from the file and used to shape the data array. The data is then scraped from the file and
+        stored in a numpy array. If the file is too large for the system memory the data is read in
+        on a frame by frame basis and stored on disk instead of memeory.
+
+        Inputs:
+            Class instance methods
+
+        Outputs:
+            data:       (numpy array) image data shaped in the format (frame_number, height, width)
+            TODO: change dimensions to a dict called info with the dimensions number of frames and dropped frames
+        """
         with self.open_file('sfmov') as file:
             # content will contain the data in the file header
             content = {}
@@ -96,7 +139,7 @@ class SfmovTools:
     def convert(self, compression_factor=5):
         """Create a hdf5 binary database file of the converted data. Accepts a compression factor from 0 to 9
         to define the amount of compression of the output file"""
-        self.imread()
+        self.scrape_sfmov()
         self.scrape_inc()
         try:
             with h5py.File(os.path.join(self.savedir, self.file + self.extensions()['hdf5']), 'w-',) as file:
