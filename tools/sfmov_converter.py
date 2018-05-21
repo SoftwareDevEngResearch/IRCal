@@ -63,7 +63,7 @@ class SfmovTools:
         extension: a string with the
         """
         return open(os.path.join(self.opendir, self.file + self.extensions()[extension]),
-                    'r+b')
+                    'rb')
 
     def scrape_inc(self):
         """
