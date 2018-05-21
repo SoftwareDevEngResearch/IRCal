@@ -34,4 +34,4 @@ def test_convert():
     assert os.path.isfile(os.path.join(filepath, 'ir_test_file.hdf5'))
     with pytest.raises(OSError, match='The file already exists please choose a different one or delete the file'):
         test_object.convert()
-    os.remove(os.path.join(filepath, filename + '.hdf5'))
+    # os.remove(os.path.join(filepath, filename + '.hdf5'))
