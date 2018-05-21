@@ -16,7 +16,7 @@ def test_scrape_inc():
 def test_imread():
     filepath = os.path.abspath('.')
     test_object = sc.SfmovTools(filepath, filepath, 'ir_test_file')
-    data, dimensions, number_of_frames, dropped_frames = test_object.imread()
+    data, dimensions, number_of_frames, dropped_frames = test_object.scrape_sfmov()
     assert (dimensions == {'height': 512, 'width': 368})
     assert (number_of_frames == 10)
     assert (dropped_frames == 0)
