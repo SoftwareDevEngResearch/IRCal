@@ -56,7 +56,12 @@ class SfmovTools:
         return {'sfmov': '.sfmov', 'inc': '.inc', 'hdf5': '.hdf5'}
 
     def open_file(self, extension):
-        """ Open and return a file object based on the input path"""
+        """
+        Open and return a file object based on the input path
+
+        Input:
+        extension: a string with the
+        """
         return open(os.path.join(self.opendir, self.file + self.extensions()[extension]),
                     'r+b')
 
