@@ -6,7 +6,6 @@ Python script for conducting image analysis on infrared images
 @author: Derek Bean
 """
 
-import h5py
 import os
 import tables as tb
 
