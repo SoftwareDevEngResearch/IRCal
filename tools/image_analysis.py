@@ -12,6 +12,8 @@ import skimage as si
 from skimage.viewer import ImageViewer
 import numpy as np
 import skimage.io as io
+from matplotlib.widgets import EllipseSelector
+import matplotlib.pyplot as plt
 
 class Image_Tools():
     def __init__(self, file_path, file_name):
@@ -88,15 +90,55 @@ class Image_Tools():
         """
         image = self.read_frames(frame_number)
         for frame in range(np.shape(image)[0]):
-            viewer = ImageViewer(image[frame,:,:])
-            viewer.show()
+            plt.imshow(image[frame, :, :])
+            plt.show()
+
+    def img_std(self, single_image):
+        """
+        Return the standard deviation of the input image
+        :param:
+            single_image: a 2d numpy ndarray
+        :return:
+            Value of the standard deviation of the image
+        TODO: The functionality of this function may need to be changed if a class for images is added
+        """
+        return np.std(single_image)
+
+    def sequence_average(self, frames):
+        return np.ndarray.mean((self.read_frames(frames)))
+
+    def define_roi(self, frame_number=0):
+        if type(frame_number) != int:
+            raise TypeError('frame number is required to be an int')
+        image = self.read_frames(frame_number)[0, :, :]
+
+        def line_select_callback(eclick, erelease):
+            'eclick and erelease are the press and release events'
+            x1, y1 = eclick.xdata, eclick.ydata
+            x2, y2 = erelease.xdata, erelease.ydata
+            print("(%3.2f, %3.2f) --> (%3.2f, %3.2f)" % (x1, y1, x2, y2))
+            print(" The button you used were: %s %s" % (eclick.button, erelease.button))
+
+        def toggle_selector(event):
+            print(' Key pressed.')
+            if event.key in ['Q', 'q'] and toggle_selector.ES.active:
+                print(' RectangleSelector deactivated.')
+                toggle_selector.ES.set_active(False)
+        fig, ax = plt.subplots()
+        ax.imshow(image)
+        fig.tight_layout()
+
+        toggle_selector.ES = EllipseSelector(ax, line_select_callback,
+                                             drawtype='box', useblit=True,
+                                             button=[1, 3],  # don't use middle button
+                                             minspanx=5, minspany=5,
+                                             spancoords='pixels',
+                                             interactive=True)
+        plt.connect('key_press_event', toggle_selector)
+        plt.show()
 
 
-    def img_rms(self):
-        return None
 
-    def define_roi(self):
-        return None
 
     def background_subratction(self):
         return None
