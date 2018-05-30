@@ -6,6 +6,9 @@ from tools import black_body_interface as bbi
 from tools import sfmov_converter as sc
 from tools import image_analysis as ia
 import os
+import numpy as np
+from skimage.viewer import ImageViewer
+
 
 
 if __name__ == '__main__':
@@ -16,4 +19,5 @@ if __name__ == '__main__':
     # se.convert(compression_factor=0)
     test_image = ia.Image_Tools(sfmov_path, file_name)
     test_image.get_attributes()
-    data = test_image.read_frames()
+    data = test_image.read_frames('0:2')
+    test_image.show_image('0:2')
