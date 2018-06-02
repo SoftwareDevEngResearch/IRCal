@@ -116,8 +116,7 @@ class Image_Tools():
             'eclick and erelease are the press and release events'
             x1, y1 = eclick.xdata, eclick.ydata
             x2, y2 = erelease.xdata, erelease.ydata
-            print("(%3.2f, %3.2f) --> (%3.2f, %3.2f)" % (x1, y1, x2, y2))
-            print(" The button you used were: %s %s" % (eclick.button, erelease.button))
+
 
         def toggle_selector(event):
             print(' Key pressed.')
@@ -133,10 +132,16 @@ class Image_Tools():
                                              button=[1, 3],  # don't use middle button
                                              minspanx=5, minspany=5,
                                              spancoords='pixels',
-                                             interactive=True)
+                                             interactive=True,
+                                             lineprops=dict(color='black', linestyle='-',
+                                                            linewidth=2, alpha=0.5))
         plt.connect('key_press_event', toggle_selector)
         plt.show()
-
+        points = toggle_selector.ES.geometry
+        fig, ax = plt.subplots()
+        ax.imshow(image)
+        plt.plot(points[1], points[0])
+        plt.show()
 
 
 
