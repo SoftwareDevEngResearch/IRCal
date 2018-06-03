@@ -21,4 +21,4 @@ if __name__ == '__main__':
     test_image.get_attributes()
     # data = test_image.read_frames('0:2')
     # test_image.show_image('0:2')
-    test_image.define_roi()
+    test_image.crop_from_roi()

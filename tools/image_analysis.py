@@ -8,18 +8,20 @@ Python script for conducting image analysis on infrared images
 
 import os
 import tables as tb
-import skimage as si
-from skimage.viewer import ImageViewer
 import numpy as np
-import skimage.io as io
 from matplotlib.widgets import EllipseSelector
 import matplotlib.pyplot as plt
+import matplotlib.patches as mp
+import scipy.ndimage.generic_filter as gf
 
 class Image_Tools():
     def __init__(self, file_path, file_name):
         self.file_path = self.path_handling(file_path)
         self.file_name = file_name
         self.data_attributes = {}
+        self.roi_center = ()
+        self.roi_height = int
+        self.roi_width = int
 
     @staticmethod
     def path_handling(path):
@@ -119,10 +121,10 @@ class Image_Tools():
 
 
         def toggle_selector(event):
-            print(' Key pressed.')
             if event.key in ['Q', 'q'] and toggle_selector.ES.active:
-                print(' RectangleSelector deactivated.')
                 toggle_selector.ES.set_active(False)
+                plt.close()
+
         fig, ax = plt.subplots()
         ax.imshow(image)
         fig.tight_layout()
@@ -137,11 +139,22 @@ class Image_Tools():
                                                             linewidth=2, alpha=0.5))
         plt.connect('key_press_event', toggle_selector)
         plt.show()
-        points = toggle_selector.ES.geometry
+        def ellipse_dimensions(extents):
+            center = (abs(extents[0] - extents[1]) / 2 + min(extents[0:2]),
+                  abs(extents[2] - extents[3]) / 2 + min(extents[2:]))
+            radius = (abs(extents[0] - extents[1]), abs(extents[2] - extents[3]))
+            return center, radius[0], radius[1]
+
+        self.roi_center, self.roi_width, self.roi_height= ellipse_dimensions(toggle_selector.ES.extents)
         fig, ax = plt.subplots()
-        ax.imshow(image)
-        plt.plot(points[1], points[0])
+        im = ax.imshow(image)
+        roi_patch = mp.Ellipse(self.roi_center, self.roi_width, self.roi_height, fill=False, hatch='\\')
+        ax.add_artist(roi_patch)
         plt.show()
+
+    def crop_from_roi(self):
+        return None
+
 
 
 
