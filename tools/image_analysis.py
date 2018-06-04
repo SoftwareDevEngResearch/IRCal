@@ -12,16 +12,14 @@ import numpy as np
 from matplotlib.widgets import EllipseSelector
 import matplotlib.pyplot as plt
 import matplotlib.patches as mp
-import scipy.ndimage as ndi
+import itertools as it
 
 class Image_Tools():
     def __init__(self, file_path, file_name):
         self.file_path = self.path_handling(file_path)
         self.file_name = file_name
         self.data_attributes = {}
-        self.roi_center = ()
-        self.roi_height = int
-        self.roi_width = int
+        self.get_attributes()
 
     @staticmethod
     def path_handling(path):
@@ -30,6 +28,21 @@ class Image_Tools():
         if path[0] == '/':
             path = '/' + path
         return path
+    @staticmethod
+    def nearest_pixel(value):
+        if type(value) == int:
+            return value
+        elif type(value) == float:
+            return int(round(value))
+        else:
+            try:
+                return [int(round(x)) for x in value]
+            except TypeError:
+                try:
+                    return value.round()
+                except AttributeError:
+                    raise TypeError('The input value is not an int, float, list tuple, dict or numpy array of ints or floats')
+
 
 
     def open_hdf5(self):
@@ -146,17 +159,38 @@ class Image_Tools():
             return center, radius[0], radius[1]
 
         self.roi_center, self.roi_width, self.roi_height= ellipse_dimensions(toggle_selector.ES.extents)
-        fig, ax = plt.subplots()
-        im = ax.imshow(image)
         roi_patch = mp.Ellipse(self.roi_center, self.roi_width, self.roi_height, fill=False, hatch='\\')
-        ax.add_artist(roi_patch)
-        plt.show()
+        return roi_patch
 
     def crop_from_roi(self):
-        return None
+        try:
+            self.roi_center
+            self.roi_width
+            self.roi_height
+        except AttributeError:
+            roi_patch = self.define_roi()
 
+        mask_array = np.ones((1, self.data_attributes['height'],
+                             self.data_attributes['width']), dtype=bool)
+        print(self.roi_center, self.roi_height, self.roi_width)
+        for x, y in it.product(range(self.data_attributes['height']),
+                               range(self.data_attributes['width'])):
+            if self.in_ellipse(x, y, self.roi_center, self.roi_height, self.roi_width):
+                print(x,y)
+                mask_array[0, x, y] = False
 
+        masked_image = np.ma.MaskedArray(self.read_frames(0), mask_array)
+        fig, ax = plt.subplots(sharex='all', sharey='all')
+        ax.add_artist(roi_patch)
+        ax.imshow(masked_image[0, :, :])
 
+        plt.show()
+        return masked_image
+
+    @staticmethod
+    def in_ellipse(x, y, center, width_x, height_y):
+        return (x-center[0])**2 * (height_y)**2 +\
+               (y-center[1])**2 * (width_x)**2 <= 0.25 * height_y**2 * width_x**2
 
     def background_subratction(self):
         return None

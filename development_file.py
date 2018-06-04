@@ -18,7 +18,8 @@ if __name__ == '__main__':
     # print(se.camera_name)
     # se.convert(compression_factor=0)
     test_image = ia.Image_Tools(sfmov_path, file_name)
-    test_image.get_attributes()
     # data = test_image.read_frames('0:2')
     # test_image.show_image('0:2')
-    test_image.define_roi()
+    test_image.crop_from_roi()
+
+
