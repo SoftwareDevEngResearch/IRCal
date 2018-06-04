@@ -12,7 +12,7 @@ import numpy as np
 from matplotlib.widgets import EllipseSelector
 import matplotlib.pyplot as plt
 import matplotlib.patches as mp
-import scipy.ndimage.generic_filter as gf
+import scipy.ndimage as ndi
 
 class Image_Tools():
     def __init__(self, file_path, file_name):
