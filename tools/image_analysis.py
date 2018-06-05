@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mp
 import itertools as it
 
-class Image_Tools():
+class ImageTools():
     def __init__(self, file_path, file_name):
         self.file_path = self.path_handling(file_path)
         self.file_name = file_name
@@ -42,8 +42,6 @@ class Image_Tools():
                     return value.round()
                 except AttributeError:
                     raise TypeError('The input value is not an int, float, list tuple, dict or numpy array of ints or floats')
-
-
 
     def open_hdf5(self):
         """
