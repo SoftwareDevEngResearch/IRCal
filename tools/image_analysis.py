@@ -175,8 +175,8 @@ class Image_Tools():
         print(self.roi_center, self.roi_height, self.roi_width)
         for x, y in it.product(range(self.data_attributes['height']),
                                range(self.data_attributes['width'])):
-            if self.in_ellipse(x, y, self.roi_center, self.roi_height, self.roi_width):
-                print(x,y)
+            if self.in_ellipse(x, y, self.roi_center[1],
+                               self.roi_center[0], self.roi_height, self.roi_width):
                 mask_array[0, x, y] = False
 
         masked_image = np.ma.MaskedArray(self.read_frames(0), mask_array)
@@ -188,9 +188,9 @@ class Image_Tools():
         return masked_image
 
     @staticmethod
-    def in_ellipse(x, y, center, width_x, height_y):
-        return (x-center[0])**2 * (height_y)**2 +\
-               (y-center[1])**2 * (width_x)**2 <= 0.25 * height_y**2 * width_x**2
+    def in_ellipse(x, y, center_x, center_y, width_x, height_y):
+        return (x-center_x)**2 * (height_y)**2 +\
+               (y-center_y)**2 * (width_x)**2 <= 0.25 * height_y**2 * width_x**2
 
     def background_subratction(self):
         return None
