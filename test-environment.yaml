@@ -9,4 +9,3 @@ dependencies:
   - pint
   - h5py
   - pyserial
-  - skimage
