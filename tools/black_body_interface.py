@@ -118,6 +118,7 @@ class BlackBodyCommands(BlackBodySerialCommunication):
     def set_temperature(self, temperature):
         """Change the setpoint of the blackbody. temperature must be a byte array 6 characters in length
         including the . if one is included. the temperature units are deg C"""
+        # TODO error handling for the temperature string
         type = b'W'
         base_message = b''.join([type, self.get_param_value(type), temperature])
         stripped_message = b''.join([base_message, self.calculate_checksum(base_message)])
