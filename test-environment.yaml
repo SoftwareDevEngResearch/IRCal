@@ -10,3 +10,4 @@ dependencies:
   - h5py
   - pyserial
   - tables
+  - scipy.optimize
