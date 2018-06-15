@@ -142,3 +142,14 @@ class BlackBodyCommands(BlackBodySerialCommunication):
         return {'start_char': message[0], 'id': message[1:5], 'type': message[5:6],
                 'param': message[6:8], 'data': message[8:14], 'checksum': message[14:-1],
                 'endchar': message[-1:]}
+
+    def cool_down(self):
+        '''
+        Set the blackbody temp to 50 deg c to cool down to a safe temp before unplugging
+        Ideally this would run and check temperatures at intervals and return when the
+        blackbody is cool but it is not desirable to lock up a thread for the large amount
+        of time this takes
+        :return:
+        '''
+        self.set_temperature(b'000050')
+        return None
