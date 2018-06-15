@@ -2,7 +2,7 @@ name: test-environment
 channels:
 - defaults
 - conda-forge
-- ska
+
 dependencies:
   - numpy
   - pytest
@@ -10,5 +10,5 @@ dependencies:
   - pint
   - h5py
   - pyserial
-  - tables
+  - pytables
   - scipy
