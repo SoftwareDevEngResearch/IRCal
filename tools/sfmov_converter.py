@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Mar 12 17:46:19 2018
-@author: capland
+@author: caplanda
 modified by Derek Bean
 """
 
