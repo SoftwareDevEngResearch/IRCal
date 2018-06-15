@@ -25,4 +25,5 @@ def test_in_ellipse():
     width = 1
     height = 1
     for x, y in product(np.random.uniform(-2, 2, 100), np.random.uniform(-2, 2, 100)):
-        assert ia.ImageTools.in_ellipse(x, y, center, width, height) == (x**2 + y**2 <=1)
+        assert ia.ImageTools.in_ellipse(x, y, center[0],
+                                        center[1], width, height) == (x**2 + y**2 <=1)

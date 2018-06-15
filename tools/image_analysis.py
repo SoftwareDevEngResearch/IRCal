@@ -187,8 +187,8 @@ class ImageTools():
 
     @staticmethod
     def in_ellipse(x, y, center_x, center_y, width_x, height_y):
-        return (x-center_x)**2 * (height_y)**2 +\
-               (y-center_y)**2 * (width_x)**2 <= 0.25 * height_y**2 * width_x**2
+        return width_x**2 * height_y**2 >= height_y * (x-center_x)**2 +\
+               width_x * (y-center_y)**2
 
     def background_subratction(self):
         return None
