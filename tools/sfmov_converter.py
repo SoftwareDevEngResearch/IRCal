@@ -81,8 +81,8 @@ class SfmovTools:
         with self.open_file('inc') as file:
             file_lines = file.readlines()
             inc_data = {x[0]: x[1:] for x in [s.split(b' ') for s in file_lines]}
-            self.int_time = float(inc_data[b'ITime_0'][0])
-            self.frame_rate = float(inc_data[b'FRate_0'][0])
+            self.int_time = float(inc_data[b'ITime'][0])
+            self.frame_rate = float(inc_data[b'FRate'][0])
             self.camera_name = inc_data[b'xmrCameraName'][0].strip(b'\n').strip(b'\r')
         return self.frame_rate, self.int_time, self.camera_name
 
